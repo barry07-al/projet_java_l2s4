@@ -4,16 +4,21 @@ import java.util.*;
 import Game.*;
 import Game.Character;
 import Game.util.*;
-import Game.util.Resource;
 import WarGame.util.biomes.*;
 import WarGame.util.resources.*;
 
 public class WarGame extends Game {
-
-		public WarGame(List<Player> players, int nbRounds, int width, int height) {
-			super(players, nbRounds, width, height);
+		/**
+		 * the constructor
+		 * @param nbRounds (int) the number of rounds of game
+		 * @param width (int) the width of board for game
+		 * @param height (int) the height of board for game
+		 */
+		public WarGame(int nbRounds, int width, int height) {
+			super(nbRounds, width, height);
 		}
 		
+		@Override
 		public void setBoard(int width, int height) {
 			Random random = new Random();
 			
@@ -33,7 +38,7 @@ public class WarGame extends Game {
 				}
 			}
 			
-			int i =0;
+			int i = 0;
 			int randomInteger;
 			int nonOcean = (width*height)/3;
 			Biome biome = null;
@@ -56,31 +61,37 @@ public class WarGame extends Game {
 			this.board = board;
 		}
 		
-		
+		@Override
 		public void deploy(Player player, Character character, Cell cell) {
 			player.addCharacter(character);
-			Army a = (Army) character;
-			WarPlayer wp = (WarPlayer) player;
-			wp.removeWarriors(a.getSize());
+			
+			
 			cell.addCharacter(character);
 			
 			// North
-			try { effectCell(player, this.players, cell, this.board[cell.getX()-1][cell.getY()]); } catch (ArrayIndexOutOfBoundsException e) {}
+			try { effectCell(player, cell, this.board[cell.getX()-1][cell.getY()]); } catch (ArrayIndexOutOfBoundsException e) {}
 			
 			// South
-			try { effectCell(player, this.players, cell, this.board[cell.getX()+1][cell.getY()]); } catch (ArrayIndexOutOfBoundsException e) {}
+			try { effectCell(player, cell, this.board[cell.getX()+1][cell.getY()]); } catch (ArrayIndexOutOfBoundsException e) {}
 			
 			// East
-			try { effectCell(player, this.players, cell, this.board[cell.getX()][cell.getY()+1]); } catch (ArrayIndexOutOfBoundsException e) {}
+			try { effectCell(player, cell, this.board[cell.getX()][cell.getY()+1]); } catch (ArrayIndexOutOfBoundsException e) {}
 			
 			// West
-			try { effectCell(player, this.players, cell, this.board[cell.getX()][cell.getY()-1]); } catch (ArrayIndexOutOfBoundsException e) {}
+			try { effectCell(player, cell, this.board[cell.getX()][cell.getY()-1]); } catch (ArrayIndexOutOfBoundsException e) {}
 			
 		}
 		
-		private void effectCell(Player me, List<Player> players, Cell myCell, Cell otherCell) {
+		/**
+		 * the method that allows to apply the effects of each cell
+		 * @param me (Player) the player
+		 * @param myCell (Cell) the actual cell
+		 * @param otherCell (Cell) the new cell
+		 */
+		private void effectCell(Player me, Cell myCell, Cell otherCell) {
 			Army myArmy = (Army) myCell.getCharacter();
 			Army otherArmy = (Army) otherCell.getCharacter();
+			List<Player> players = this.getPlayers() ;
 			if (otherArmy != null) {
 				
 				// if enemy army is smaller than deployed army enemie's size is reduced to half
@@ -107,6 +118,7 @@ public class WarGame extends Game {
 			}
 		}
 		
+		@Override
 		public void collect(Player player) {
 			Resource resource;
 			for (Character c: player.getCharacters()) {
@@ -115,6 +127,7 @@ public class WarGame extends Game {
 			}
 		}
 		
+		@Override
 		public boolean convert(Player player, Resource resource, int nbResource) {
 			if (player.getNbResource(resource.toString()) >= nbResource) {
 				int loot = resource.loot()*nbResource;
@@ -128,6 +141,7 @@ public class WarGame extends Game {
 			}
 		}
 		
+		@Override
 		public void distribute(Player player) {
 			WarPlayer p = (WarPlayer) player;
 			int cost;
@@ -147,7 +161,11 @@ public class WarGame extends Game {
 			
 		}
 		
-		private boolean checkFull() {
+		/**
+		 * the method allowing us not to deploy on an ocean cell
+		 * @return (boolean) true if the cell is ocean or false is not
+		 */
+		protected boolean checkFull() {
 			Biome ocean = new Ocean();
 			Cell cell;
 			for (int i= 0; i< this.board.length; i++) {
@@ -161,9 +179,12 @@ public class WarGame extends Game {
 			return true;
 		}
 		
-		private void showBoard() {
+		/**
+		 * the method that creates and displays the game board
+		 */
+		protected void showBoard() {
 			System.out.print("     ");
-			for (int i=0; i<this.board.length; i++) {
+			for (int i=0; i<this.board[0].length; i++) {
 				if (i< 10) {System.out.print(i+ "   ");}
 				else {System.out.print(i+ "  ");}
 			}
@@ -179,7 +200,13 @@ public class WarGame extends Game {
 				}
 				
 				for (int j=0; j<this.board[i].length; j++) {
-					biome = String.valueOf(this.board[i][j].getBiome().toString().charAt(0)) ;
+					if (this.board[i][j].isFree()) {
+						biome = String.valueOf(this.board[i][j].getBiome().toString().charAt(0)) ;
+					} 
+					else {
+						biome = "A";
+					}
+					
 					if (!biome.equals("O")) {
 						System.out.print("["+ biome + "]|");
 					}
@@ -193,11 +220,13 @@ public class WarGame extends Game {
 			System.out.print("\n");
 		}
 		
-		private void showResources(Player player) {
+		/**
+		 * the method which displays a resource for a player passed in parameter
+		 * @param player (Player) the player
+		 */
+		protected void showResources(Player player) {
 			WarPlayer wp = (WarPlayer) player;
 			System.out.println("You have: "+ wp.getFood() + " food");
-			
-			
 			Map<String, Integer> resources = player.getResources();
 			Set<String> keys = resources.keySet();
 			int k = 1;
@@ -207,7 +236,11 @@ public class WarGame extends Game {
 			}
 		}
 		
-		private void showArmies(Player p) {
+		/**
+		 * the method which displays a armies for a player passed in parameter
+		 * @param p (Player) the player
+		 */
+		protected void showArmies(Player p) {
 			System.out.println("Your troops are: ");
 			int t = 1;
 			for (Character c: p.getCharacters()) {
@@ -216,9 +249,12 @@ public class WarGame extends Game {
 			}
 		}
 		
+		
+		@Override
 		public void playOneRound(Player player) {
 			
 			String answer;
+			boolean coord = false;
 			WarPlayer wp = (WarPlayer) player;
 			showBoard();
 			showArmies(player);
@@ -226,21 +262,45 @@ public class WarGame extends Game {
 			//Deploy !!!!!!!!!!!!!!!
 			System.out.print("Deploy ? [y/n]: ");
 			answer = Input.YNString();
+			
 			if (answer.equals("y")) {
-				System.out.print("Size of army: ");
+				int x=0;
+				int y=0;
+				
+				while(!coord) {
+					System.out.print("Cell [X]: ");
+					x = Input.readInt();
+					coord = checkCoord(x, 0);
+				}
+				coord = false;
+				
+				while(!coord) {
+					System.out.print("Cell [Y]: ");
+					y = Input.readInt();
+					coord = checkCoord(y, 1);
+				}
+				coord = false;
+				
+				System.out.print("Size of army: ") ;
 				int size = Input.readInt();
-				System.out.print("Cell [X]: ");
-				int x = Input.readInt();
-				System.out.print("Cell [Y]: ");
-				int y = Input.readInt();	
 				boolean isFree; 
 				try { isFree = ( this.board[x][y].isFree() && !this.board[x][y].getBiome().equals(new Ocean()) ); }catch (ArrayIndexOutOfBoundsException e) { isFree = false;}
 				while (!isFree) {
-					System.out.println("Cell occupied! ");
-					System.out.print("Cell [X]: ");
-					x = Input.readInt();
-					System.out.print("Cell [Y]: ");
-					y = Input.readInt();	
+					System.out.println("Cannot deploy on Ocean or ocuupied cell! ");
+					while(!coord) {
+						System.out.print("Cell [X]: ");
+						x = Input.readInt();
+						coord = checkCoord(x, 0);
+					}
+					coord = false;
+					
+					while(!coord) {
+						System.out.print("Cell [Y]: ");
+						y = Input.readInt();
+						coord = checkCoord(y, 1);
+					}
+					coord = false;
+					
 					try { isFree = ( this.board[x][y].isFree() && !this.board[x][y].getBiome().equals(new Ocean()) ); }catch (ArrayIndexOutOfBoundsException e) { continue;}
 					
 				}
@@ -263,6 +323,8 @@ public class WarGame extends Game {
 				// Deploy !!!!!!!!!!!!!!!!
 			    	
 				deploy(player, army, board[x][y]);
+				wp.removeWarriors(size);
+				
 				showArmies(player);
 			}
 			 // Collect !!!!!!!!!!!!!!!!!
@@ -272,65 +334,113 @@ public class WarGame extends Game {
 			showResources(player);
 			
 			// Convert !!!!!!!!!!!!!!!!!!
-			System.out.print("Convert ? [y/n]: ");
-			answer = Input.YNString();
-			//System.out.print("answer: "+answer);
 			
-			boolean haveEnough = true;
-			int nbResource;
-			int selectedResource;
-			Resource resource = null;
-			while (!answer.equals("n") || !haveEnough) {
-				System.out.print("Choose resource (int): ");
-				selectedResource = Input.readInt() - 1;
+			
+			
+			int nbResourceTmp = 0;
+			for(Map.Entry<String, Integer> r : player.getResources().entrySet()) {
 				
-				List<String> listResources = new ArrayList<String>();
-				// a changer !!!!!!!!!!!!
-				listResources.add("Rock"); listResources.add("Sand"); listResources.add("Wood"); listResources.add("Wheat");
-				try {
-					listResources.get(selectedResource);
-					switch (selectedResource) {
-					case 0:
-						resource = new Rock();
-						break;
-					case 1:
-						resource = new Sand();
-						break;
-					case 2:
-						resource = new Wood();
-						break;
-					case 3:
-						resource = new Wheat();
-						break;
-					default:
-						break;
-					}
-				} catch (IndexOutOfBoundsException e) { 
-					System.out.println("Wrong selection! ");
-					continue;
-				}
-				
-				System.out.print("Quantity: ");
-				nbResource = Input.readInt();
-				
-				haveEnough = convert(player, resource, nbResource);
-				
-				showResources(player);
-				System.out.print("Convert ? [y/n]: ");
-				answer = Input.YNString();
-				
-				
-				
-			    
+				nbResourceTmp += player.getResources().get(r.getKey());
 			}
 			
+				if (nbResourceTmp == 0) {
+					System.out.println("You don't have resources to convert!");
+					
+				}
+				else {
+					System.out.print("Convert ? [y/n]: ");
+					answer = Input.YNString();
+				}
+				
+				
+				int nbResource;
+				int selectedResource;
+				
+				Resource resource = null;
+				while (answer.equals("y") && nbResourceTmp != 0) {
+					if (nbResourceTmp > 1) {
+					
+					System.out.print("Choose resource (int): ");
+					selectedResource = Input.readInt() - 1;
+					
+					List<String> listResources = new ArrayList<String>();
+					// a changer !!!!!!!!!!!!
+					listResources.add("Rock"); listResources.add("Sand"); listResources.add("Wood"); listResources.add("Wheat");
+					try {
+						listResources.get(selectedResource);
+						switch (selectedResource) {
+						case 0:
+							resource = new Rock();
+							break;
+						case 1:
+							resource = new Sand();
+							break;
+						case 2:
+							resource = new Wood();
+							break;
+						case 3:
+							resource = new Wheat();
+							break;
+						default:
+							break;
+						}
+					} catch (IndexOutOfBoundsException e) { 
+						System.out.println("Wrong selection! ");
+						continue;
+					}
+					
+					System.out.print("Quantity: ");
+					nbResource = Input.readInt();
+					
+					if(! convert(player, resource, nbResource)) {
+						System.out.println("Pas Assez de resources!");
+					}
+					
+					showResources(player);
+					System.out.print("Convert ? [y/n]: ");
+					answer = Input.YNString();
+					
+					
+					} 
+					else {
+						answer = "n";
+						
+						String stringResource;
+						resource = null;
+						for(Map.Entry<String, Integer> r : player.getResources().entrySet()) {
+							if(player.getResources().get(r.getKey()) > 0) {
+								stringResource = r.getKey();
+								switch (stringResource) {
+								case "Rock":
+									resource = new Rock();
+									break;
+								case "Sand":
+									resource = new Sand();
+									break;
+								case "Wood":
+									resource = new Wood();
+									break;
+								case "Wheat":
+									resource = new Wheat();
+									break;
+								default:
+									break;
+								}
+								convert(player, resource, 1);
+							}
+						}
+					} // fin du else
+				} // fin du while
+				
 			// Distribute !!!!!!!!!!
 			distribute(player);
 			System.out.println("Armies fed!\nYou have: " + wp.getFood() + " food left");
-			
-			
 		}
 		
+		
+		
+		
+		@Override
 		public void play() {
 			
 			Resource Rock = new Rock();
@@ -351,14 +461,30 @@ public class WarGame extends Game {
 				for (Player p: this.players) {
 					System.out.println("########### " + p.getName() + " turn ###########");
 					playOneRound(p);
+					
+				}
+				
+				//recap
+				System.out.println("\n##############################\n#           Summary          #\n##############################");
+				for (Player p: this.players) {
+					System.out.println("\n########## "+  p.getName()  +" ##########\n");
+					showArmies(p);
+					showResources(p);
 				}
 				
 				i++;
 			}
 			List<Player> winners = winners();
+			i = 1;
+			System.out.println("The winners are: ");
 			for (Player w: winners) {
-				System.out.println("The winner is: " + w.getName());
-				System.out.println("Score: "+ w.calculateScore());
+				System.out.println(i+ ") " + w.getName());
+				//System.out.println("Score: "+ w.calculateScore());
+			}
+			
+			
+			for (Player p: this.players) {
+				System.out.println("Score de "+p.getName()+": "+p.calculateScore());
 			}
 			
 			

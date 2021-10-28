@@ -18,16 +18,22 @@ import Game.util.*;
 
 
 
+
 public class FarmGame extends Game {
 
 	
-	
-	public FarmGame(List<Player> players, int nbRounds, int width, int height) {
-		super(players,nbRounds, width, height) ;
+	/**
+	 * the constructor
+	 * @param nbRounds (int) the number of rounds
+	 * @param width (int) the number of rounds
+	 * @param height (int) the number of rounds
+	 */
+	public FarmGame(int nbRounds, int width, int height) {
+		super(nbRounds, width, height) ;
 		
 	}
 	
-
+	@Override
 	public void setBoard(int width, int height) {
 		Random random = new Random();
 		
@@ -39,7 +45,8 @@ public class FarmGame extends Game {
 		
 		Biome[] biomes = new Biome[] {mountain, desert, forest, plain};
 		
-		// init the board
+		/* init the board */
+		
 		Cell[][] board = new Cell[height][width];
 		for (int i=0; i<board.length; i++) {
 			for (int j=0; j<board[i].length; j++) {
@@ -62,21 +69,20 @@ public class FarmGame extends Game {
 				try { board[i][randomInteger+1].setBiome(biomes[random.nextInt(biomes.length)]); } catch (ArrayIndexOutOfBoundsException e) { board[i][randomInteger - 1].setBiome(biomes[random.nextInt(biomes.length)]); }
 				nonOcean -= 2;					
 			}
-			
-			
 			i++;
 			i %= height;
 		}
 		this.board = board;
 	}
+	
 
-
+	@Override
 	public void deploy(Player player, Character character, Cell cell) {
 		cell.addCharacter(character);
 		player.addCharacter(character);
 	}
 
-
+	@Override
 	public void collect(Player player) {
 		Resource resource ;
 		for (Character c: player.getCharacters()) {
@@ -85,17 +91,17 @@ public class FarmGame extends Game {
 		}
 	}
 
-
+	@Override
 	public boolean convert(Player player, Resource resource, int nbResource) {
 		if (player.getNbResource(resource.toString()) >= nbResource) {
-			player.addGold(resource.loot());
+			player.addGold(resource.loot()*nbResource);
 			player.addNbResource(resource.toString(), -nbResource);
 			return true;
 		}
 		return false;
 	}
 
-
+	@Override
 	public void distribute(Player player) {
 		int cost;
 		List <Character> WorkersToRemove = new ArrayList<Character>();
@@ -114,7 +120,11 @@ public class FarmGame extends Game {
 		}
 	}
 	
-	private boolean checkFull() {
+	/**
+	 * the method allowing us not to deploy on an ocean cell
+	 * @return (boolean) true if the cell is ocean or false is not
+	 */
+	protected boolean checkFull() {
 		Biome ocean = new Ocean();
 		Cell cell;
 		for (int i= 0; i< this.board.length; i++) {
@@ -128,9 +138,12 @@ public class FarmGame extends Game {
 		return true;
 	}
 	
-	private void showBoard() {
+	/**
+	 * the method that creates and displays the game board
+	 */
+	protected void showBoard() {
 		System.out.print("     ");
-		for (int i=0; i<this.board.length; i++) {
+		for (int i=0; i<this.board[0].length; i++) {
 			if (i< 10) {System.out.print(i+ "   ");}
 			else {System.out.print(i+ "  ");}
 		}
@@ -145,7 +158,12 @@ public class FarmGame extends Game {
 				System.out.print(i+ " |");
 			}
 			for (int j=0; j<this.board[i].length; j++) {
-				biome = String.valueOf(this.board[i][j].getBiome().toString().charAt(0)) ;
+				if (this.board[i][j].isFree()) {
+					biome = String.valueOf(this.board[i][j].getBiome().toString().charAt(0)) ;
+				}
+				else {
+					biome = "W";
+				}
 				if (!biome.equals("O")) {
 					System.out.print("["+ biome + "]|");
 				}
@@ -159,11 +177,12 @@ public class FarmGame extends Game {
 		System.out.print("\n");
 	}
 	
-	private void showResources(Player player) {
-		
+	/**
+	 * the method which displays a resource for a player passed in parameter
+	 * @param player (Player) the player
+	 */
+	protected void showResources(Player player) {
 		System.out.println("You have: "+ player.getGold() + " gold");
-		
-		
 		Map<String, Integer> resources = player.getResources();
 		Set<String> keys = resources.keySet();
 		int k = 1;
@@ -173,7 +192,11 @@ public class FarmGame extends Game {
 		}
 	}
 	
-	private void showWorkers(Player p) {
+	/**
+	 * the method which displays a workers for a player passed in parameter
+	 * @param p (Player) the player
+	 */
+	protected void showWorkers(Player p) {
 		System.out.println("Your workers are: ");
 		int t = 1;
 		for (Character c: p.getCharacters()) {
@@ -181,12 +204,15 @@ public class FarmGame extends Game {
 			t++;
 		}
 	}
-
+	
+	@Override
 	public void playOneRound(Player player) {
 		String answer = null;
+		boolean coord = false ;
 		showBoard();
 		showWorkers(player);
 		showResources(player);
+		
 		
 		// Choice !!!!!!
 		System.out.print("\n1) Deploy\n2) Convert\n3) Nothing\nYour choice (int): ");
@@ -203,18 +229,38 @@ public class FarmGame extends Game {
 		
 		if (answer.equals("1")) {
 			System.out.println("Deploy! ");
-			System.out.print("Cell [X]: ");
-			int x = Input.readInt();
-			System.out.print("Cell [Y]: ");
-			int y = Input.readInt();
+			int x = 0 ;
+			int y = 0 ;
+			while(!coord) {
+				System.out.print("Cell [X]: ");
+				x = Input.readInt();
+				coord = checkCoord(x, 0);
+			}
+			coord = false;
+			
+			while(!coord) {
+				System.out.print("Cell [Y]: ");
+				y = Input.readInt();
+				coord = checkCoord(y, 1);
+			}
+			coord = false;
 			boolean isFree;
 			try { isFree = (this.board[x][y].isFree() && !this.board[x][y].getBiome().equals(new Ocean()) );} catch (ArrayIndexOutOfBoundsException e) {isFree = false;}
 			while (!isFree) {
-				System.out.print("Cell occupied! ");
-				System.out.print("Cell [X]: ");
-				x = Input.readInt();
-				System.out.print("Cell [Y]: ");
-				y = Input.readInt();	
+				System.out.println("Cannot deploy on Ocean or ocuppied cell ");
+				while(!coord) {
+					System.out.print("Cell [X]: ");
+					x = Input.readInt();
+					coord = checkCoord(x, 0);
+				}
+				coord = false;
+				while(!coord) {
+					System.out.print("Cell [Y]: ");
+					y = Input.readInt();
+					coord = checkCoord(y, 1);
+				}
+				coord = false;
+				
 				try { isFree = (this.board[x][y].isFree() && !this.board[x][y].getBiome().equals(new Ocean()) );} catch (ArrayIndexOutOfBoundsException e) {continue;}
 			}
 			// Army creation
@@ -236,12 +282,29 @@ public class FarmGame extends Game {
 		else if (answer.equals("2")) {
 			System.out.println("Convert! ");
 			
-			boolean haveEnough = true;
+			
 			int nbResource;
 			int selectedResource;
+			
+			boolean haveMultipleResources = false;
+			
+			
+			int nbResourceTmp= 0;
+			for(Map.Entry<String, Integer> r : player.getResources().entrySet()) {
+				
+				nbResourceTmp += player.getResources().get(r.getKey());
+			}
+			
+			if(nbResourceTmp == 0) {
+				System.out.println("You don't have resources to convert! ");
+			}
+			
 			answer = "y";
 			Resource resource = null;
-			while (!answer.equals("n") || !haveEnough) {
+			while (answer.equals("y") && nbResourceTmp != 0) {
+				if (nbResourceTmp > 1) {
+					haveMultipleResources = true;
+				
 				System.out.print("Choose resource (int): ");
 				selectedResource = Input.readInt() - 1;
 				
@@ -274,14 +337,45 @@ public class FarmGame extends Game {
 				System.out.print("Quantity: ");
 				nbResource = Input.readInt();
 				
-				haveEnough = convert(player, resource, nbResource);
+				System.out.print("Quantity: ");
+				nbResource = Input.readInt();
 				
-				showResources(player);
-				System.out.print("Convert ? [y/n]: ");
-				answer = Input.YNString();
-				
-				
-			    
+					if(! convert(player, resource, nbResource)) {
+						System.out.println("Pas Assez de resources!");
+					}
+					
+					showResources(player);
+					System.out.print("Convert ? [y/n]: ");
+					answer = Input.YNString();
+				}
+				else {
+					answer = "n";
+					
+					String stringResource;
+					resource = null;
+					for(Map.Entry<String, Integer> r : player.getResources().entrySet()) {
+						if(player.getResources().get(r.getKey()) > 0) {
+							stringResource = r.getKey();
+							switch (stringResource) {
+							case "Rock":
+								resource = new Rock();
+								break;
+							case "Sand":
+								resource = new Sand();
+								break;
+							case "Wood":
+								resource = new Wood();
+								break;
+							case "Wheat":
+								resource = new Wheat();
+								break;
+							default:
+								break;
+							}
+							convert(player, resource, 1);
+						}
+					}
+				}
 			}
 		}
 		else {
@@ -301,7 +395,7 @@ public class FarmGame extends Game {
 	
 	}
 
-
+	@Override
 	public void play() {
 		Resource Rock = new Rock();
 		Resource Sand = new Sand();
@@ -329,6 +423,9 @@ public class FarmGame extends Game {
 		for (Player w: winners) {
 			System.out.println("The winner is: " + w.getName());
 			System.out.println("Score: "+ w.calculateScore());
+		}
+		for (Player p: this.players) {
+			System.out.println("Score de "+p.getName()+": "+p.calculateScore());
 		}
 	}
 
