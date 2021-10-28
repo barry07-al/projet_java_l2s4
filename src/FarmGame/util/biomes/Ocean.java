@@ -1,0 +1,40 @@
+package FarmGame.util.biomes;
+
+import Game.util.Biome;
+import Game.util.Resource;
+import FarmGame.util.resources.*;
+
+public class Ocean implements Biome {
+
+	private final Resource RESOURCE;
+	private final int SCORE;
+	
+	public Ocean() {
+		this.RESOURCE = new None();
+		this.SCORE = 0;
+	}
+	
+	public Resource resource() {
+		return this.RESOURCE;
+	}
+	
+	public int score() {
+		return this.SCORE;
+	}
+	
+	public String toString() {
+		return "Ocean";
+	}
+	
+	public boolean equals(Object o) {
+		if (o instanceof Ocean) {
+			Ocean other = (Ocean) o;
+			return (this.RESOURCE.equals(other.RESOURCE) && this.SCORE == other.SCORE);
+			
+		}
+		else {
+			return false;
+		}
+	}
+
+}
