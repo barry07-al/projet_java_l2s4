@@ -1,10 +1,9 @@
 # l2s4-projet-2021
 
-# GROUPE 4
-## Equipe 
+## Membre de l'équipe 
 
-- Youcef MOUKEUT
 - Alpha Oumar BARRY
+- Youcef MOUKEUT
 - Haik PHAGRADIANI
 - Mohamed CAMARA
 
